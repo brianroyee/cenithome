@@ -1,6 +1,8 @@
 // API client for communicating with the backend
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// In production (Vercel), API is at /api/*
+// In local development, API is at localhost:3001/api/*
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export interface TeamMember {
   id: string;
@@ -26,12 +28,22 @@ export async function uploadImage(
   file: File
 ): Promise<{ imageUrl: string } | null> {
   try {
-    const formData = new FormData();
-    formData.append("file", file);
+    // Convert file to base64
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+    });
+    reader.readAsDataURL(file);
+    const base64 = await base64Promise;
 
     const response = await fetch(`${API_URL}/api/upload`, {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: base64,
+        filename: file.name.replace(/\.[^/.]+$/, ""),
+      }),
     });
 
     if (!response.ok) {
@@ -80,7 +92,7 @@ export async function updateTeamMember(
   member: Omit<TeamMember, "id">
 ): Promise<TeamMember | null> {
   try {
-    const response = await fetch(`${API_URL}/api/team/${id}`, {
+    const response = await fetch(`${API_URL}/api/team?id=${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(member),
@@ -95,7 +107,7 @@ export async function updateTeamMember(
 
 export async function deleteTeamMember(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/api/team/${id}`, {
+    const response = await fetch(`${API_URL}/api/team?id=${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete team member");
@@ -137,7 +149,7 @@ export async function createJob(
 
 export async function deleteJob(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/api/jobs/${id}`, {
+    const response = await fetch(`${API_URL}/api/jobs?id=${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete job");
