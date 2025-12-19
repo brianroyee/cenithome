@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
@@ -16,12 +17,14 @@ import {
 
 const app = new Hono();
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Configure Cloudinary (only if env vars are set)
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // Enable CORS for frontend
 app.use(
@@ -40,20 +43,9 @@ app.use(
 // Health check
 app.get("/api/health", (c) => c.json({ status: "ok" }));
 
-// File Upload API - Cloudinary
+// File Upload API - Cloudinary or Base64 fallback
 app.post("/api/upload", async (c) => {
   try {
-    // Check if Cloudinary is configured
-    if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return c.json(
-        {
-          error:
-            "Cloudinary is not configured. Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your environment variables.",
-        },
-        500
-      );
-    }
-
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
 
@@ -73,34 +65,53 @@ app.post("/api/upload", async (c) => {
       );
     }
 
-    // Validate file size (max 10MB for Cloudinary free tier)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (max 5MB for base64, 10MB for Cloudinary)
+    const maxSize = process.env.CLOUDINARY_CLOUD_NAME
+      ? 10 * 1024 * 1024
+      : 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      return c.json({ error: "File too large. Maximum size is 10MB." }, 400);
+      return c.json(
+        {
+          error: `File too large. Maximum size is ${
+            process.env.CLOUDINARY_CLOUD_NAME ? "10MB" : "5MB"
+          }.`,
+        },
+        400
+      );
     }
 
     // Convert file to base64
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(base64, {
-      folder: "cenit-labs/team",
-      resource_type: "image",
-      transformation: [
-        { width: 800, height: 1000, crop: "fill", gravity: "face" },
-        { quality: "auto" },
-        { fetch_format: "auto" },
-      ],
-    });
+    // If Cloudinary is configured, upload there
+    if (process.env.CLOUDINARY_CLOUD_NAME) {
+      try {
+        const result = await cloudinary.uploader.upload(base64, {
+          folder: "cenit-labs/team",
+          resource_type: "image",
+          transformation: [
+            { width: 800, height: 1000, crop: "fill", gravity: "face" },
+            { quality: "auto" },
+            { fetch_format: "auto" },
+          ],
+        });
+        return c.json({ success: true, imageUrl: result.secure_url }, 201);
+      } catch (cloudinaryError) {
+        console.error("Cloudinary upload error:", cloudinaryError);
+        return c.json({ error: "Failed to upload to cloud storage" }, 500);
+      }
+    }
 
-    // Return the Cloudinary URL
-    const imageUrl = result.secure_url;
-
-    return c.json({ success: true, imageUrl }, 201);
+    // Fallback: Return base64 directly (for local development)
+    // Note: This stores the image directly in the database as a data URL
+    console.log(
+      "⚠️  Cloudinary not configured. Using base64 fallback (not recommended for production)"
+    );
+    return c.json({ success: true, imageUrl: base64 }, 201);
   } catch (error) {
     console.error("Error uploading file:", error);
-    return c.json({ error: "Failed to upload file to cloud storage" }, 500);
+    return c.json({ error: "Failed to upload file" }, 500);
   }
 });
 
@@ -228,6 +239,11 @@ initDatabase()
       port: Number(PORT),
     });
     console.log(`🚀 API Server running on http://localhost:${PORT}`);
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      console.log(
+        "⚠️  Cloudinary not configured. Image uploads will use base64 (dev mode only)"
+      );
+    }
   })
   .catch((error) => {
     console.error("Failed to initialize database:", error);

@@ -1,3 +1,16 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+*.local
+
 # Logs
 logs
 *.log
@@ -7,10 +20,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Local database
+local.db
+*.db
+
+# Uploads (local dev only)
+public/uploads/*
+!public/uploads/.gitkeep
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +38,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+Thumbs.db
