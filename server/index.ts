@@ -1,4 +1,4 @@
-import "dotenv/config";
+import * as dotenv from "dotenv";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
@@ -15,7 +15,16 @@ import {
   deleteJob,
 } from "./db";
 
+// Load environment variables
+dotenv.config();
+
 const app = new Hono();
+
+// Debug: Check if env vars are loaded
+console.log(
+  "📦 Env check - CLOUDINARY_CLOUD_NAME:",
+  process.env.CLOUDINARY_CLOUD_NAME ? "✓ Set" : "✗ Not set"
+);
 
 // Configure Cloudinary (only if env vars are set)
 if (process.env.CLOUDINARY_CLOUD_NAME) {
@@ -24,6 +33,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
+  console.log("☁️  Cloudinary configured successfully");
 }
 
 // Enable CORS for frontend
