@@ -46,7 +46,7 @@ export const Cursor: React.FC = () => {
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.tagName === "SELECT" ||
-        target.classList.contains("cursor-pointer");
+        target.closest(".cursor-pointer") !== null;
 
       setIsHovered(isInteractive);
     };

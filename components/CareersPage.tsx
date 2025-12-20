@@ -130,7 +130,13 @@ export const CareersPage: React.FC = () => {
           <div className="space-y-6">
             {jobs.map((job, index) => (
               <Reveal key={job.id} delay={index * 0.1}>
-                <div className="group bg-white border border-neutral-200 hover:border-cenit-blue rounded-lg p-6 md:p-8 transition-all hover:shadow-lg cursor-pointer">
+                <div
+                  className="group bg-white border border-neutral-200 hover:border-cenit-blue rounded-lg p-6 md:p-8 transition-all hover:shadow-lg cursor-pointer"
+                  onClick={() =>
+                    job.applicationUrl &&
+                    window.open(job.applicationUrl, "_blank")
+                  }
+                >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold text-neutral-900 group-hover:text-cenit-blue transition-colors">
@@ -163,6 +169,7 @@ export const CareersPage: React.FC = () => {
                             : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
                         }`}
                         onClick={(e) => {
+                          e.stopPropagation();
                           if (!job.applicationUrl) e.preventDefault();
                         }}
                       >
