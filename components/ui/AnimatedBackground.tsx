@@ -1,24 +1,6 @@
 import React, { useEffect, useRef } from "react";
-
-// Simplified animations to reduce paints
-const styles = `
-@keyframes drift {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
-  100% { transform: translate(0, 0) scale(1); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.8; }
-}
-
-@keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-`;
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 export const AnimatedBackground: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,11 +11,10 @@ export const AnimatedBackground: React.FC = () => {
     if (!container) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Direct DOM manipulation - NO React rewrites
+      // Direct DOM manipulation for mouse tracking
       container.style.setProperty("--mouse-x", `${e.clientX}px`);
       container.style.setProperty("--mouse-y", `${e.clientY}px`);
 
-      // Handle "moving" state via class
       container.classList.add("is-moving");
 
       if (isMovingRef.current) clearTimeout(isMovingRef.current);
@@ -49,45 +30,73 @@ export const AnimatedBackground: React.FC = () => {
     };
   }, []);
 
+  useGSAP(
+    () => {
+      // Background Gradient Shift
+      gsap.to(".bg-gradient-base", {
+        backgroundPosition: "100% 50%",
+        duration: 15,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      // Blobs Floating
+      const blobs = gsap.utils.toArray(".blob") as HTMLElement[];
+      blobs.forEach((blob) => {
+        gsap.to(blob, {
+          x: "random(-50, 50)",
+          y: "random(-50, 50)",
+          rotation: "random(-20, 20)",
+          scale: "random(0.9, 1.1)",
+          duration: "random(15, 25)",
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          delay: Math.random() * 5,
+        });
+      });
+
+      // Pulse Center
+      gsap.to(".center-pulse", {
+        opacity: 0.8,
+        scale: 1.1,
+        duration: 4,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    },
+    { scope: containerRef }
+  );
+
   return (
     <div
       ref={containerRef}
       className="fixed inset-0 w-full h-full -z-50 overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50"
     >
-      <style>{styles}</style>
-
       {/* Dynamic Background Base */}
       <div
-        className="absolute inset-0 opacity-40 will-change-[background-position]"
+        className="bg-gradient-base absolute inset-0 opacity-40 will-change-[background-position]"
         style={{
           background:
             "linear-gradient(-45deg, #e0e7ff, #dbeafe, #f0f9ff, #e0f2fe)",
           backgroundSize: "400% 400%",
-          animation: "gradientShift 15s ease infinite",
         }}
       />
 
       {/* Reduced Blobs - Using fewer, larger elements with simpler animations */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Top Left Blob */}
-        <div
-          className="absolute -top-[10%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-blue-200/20 blur-[80px] will-change-transform"
-          style={{ animation: "drift 20s ease-in-out infinite" }}
-        />
+        <div className="blob absolute -top-[10%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-blue-200/20 blur-[80px] will-change-transform" />
 
         {/* Bottom Right Blob */}
-        <div
-          className="absolute -bottom-[10%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-indigo-200/20 blur-[80px] will-change-transform"
-          style={{
-            animation: "drift 25s ease-in-out infinite reverse",
-            animationDelay: "-5s",
-          }}
-        />
+        <div className="blob absolute -bottom-[10%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-indigo-200/20 blur-[80px] will-change-transform" />
 
         {/* Center Accent */}
         <div
-          className="absolute top-[20%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-cyan-100/30 blur-[60px] will-change-transform"
-          style={{ animation: "pulse 8s ease-in-out infinite" }}
+          className="center-pulse absolute top-[20%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-cyan-100/30 blur-[60px] will-change-transform"
+          style={{ opacity: 0.6 }}
         />
       </div>
 
