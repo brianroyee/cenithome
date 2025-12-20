@@ -1,10 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getAllJobs, createJob, deleteJob, initDatabase } from "./db.js";
+import {
+  getAllJobs,
+  createJob,
+  updateJob,
+  deleteJob,
+  initDatabase,
+} from "./db.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -34,6 +43,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         applicationUrl: body.applicationUrl,
       });
       return res.status(201).json(job);
+    }
+
+    // PUT - Update job
+    if (req.method === "PUT") {
+      const { id } = req.query;
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({ error: "ID required" });
+      }
+      const body = req.body;
+      const job = await updateJob(id, {
+        title: body.title,
+        department: body.department,
+        location: body.location,
+        type: body.type,
+        description: body.description,
+        applicationUrl: body.applicationUrl,
+      });
+      return res.status(200).json(job);
     }
 
     // DELETE - Delete job

@@ -192,6 +192,33 @@ export async function createJob(job: {
   return job;
 }
 
+export async function updateJob(
+  id: string,
+  job: Partial<{
+    title: string;
+    department: string;
+    location: string;
+    type: string;
+    description: string;
+    applicationUrl: string;
+  }>
+) {
+  const client = getClient();
+  // Explicitly convert undefined to null
+  const title = job.title ?? null;
+  const department = job.department ?? null;
+  const location = job.location ?? null;
+  const type = job.type ?? null;
+  const description = job.description ?? null;
+  const applicationUrl = job.applicationUrl ?? null;
+
+  await client.execute({
+    sql: "UPDATE jobs SET title = ?, department = ?, location = ?, type = ?, description = ?, applicationUrl = ? WHERE id = ?",
+    args: [title, department, location, type, description, applicationUrl, id],
+  });
+  return { id, ...job };
+}
+
 export async function deleteJob(id: string) {
   const client = getClient();
   await client.execute({

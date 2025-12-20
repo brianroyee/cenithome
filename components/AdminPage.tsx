@@ -29,6 +29,7 @@ import {
   deleteTeamMember,
   fetchJobs,
   createJob,
+  updateJob,
   deleteJob,
   uploadImage,
   TeamMember,
@@ -301,17 +302,31 @@ export const AdminPage: React.FC = () => {
     setSavingJob(true);
     setError(null);
     try {
-      const result = await createJob({
-        id: jobFormData.id,
+      let result;
+      const jobData = {
         title: jobFormData.title,
         department: jobFormData.department,
         location: jobFormData.location,
         type: jobFormData.type,
         description: jobFormData.description,
         applicationUrl: jobFormData.applicationUrl,
-      });
-      if (result) {
-        setJobs([...jobs, result]);
+      };
+
+      if (isAddingNewJob) {
+        // Create new job
+        result = await createJob({
+          id: jobFormData.id,
+          ...jobData,
+        });
+        if (result) {
+          setJobs([...jobs, result]);
+        }
+      } else {
+        // Update existing job
+        result = await updateJob(jobFormData.id, jobData);
+        if (result) {
+          setJobs(jobs.map((j) => (j.id === result.id ? result : j)));
+        }
       }
       setJobFormData(initialJobFormState);
       setIsAddingNewJob(false);
@@ -321,6 +336,19 @@ export const AdminPage: React.FC = () => {
     setSavingJob(false);
   };
 
+  const handleEditJob = (job: Job) => {
+    setJobFormData({
+      id: job.id,
+      title: job.title,
+      department: job.department,
+      location: job.location,
+      type: job.type,
+      description: job.description || "",
+      applicationUrl: job.applicationUrl || "",
+    });
+    setIsAddingNewJob(false); // Not adding new, editing existing
+  };
+
   const handleDeleteJob = async (id: string) => {
     if (!confirm("Are you sure you want to delete this job posting?")) return;
 
@@ -328,6 +356,10 @@ export const AdminPage: React.FC = () => {
       const success = await deleteJob(id);
       if (success) {
         setJobs(jobs.filter((j) => j.id !== id));
+        // If we were editing this job, clear the form
+        if (jobFormData.id === id) {
+          setJobFormData(initialJobFormState);
+        }
       }
     } catch (err) {
       setError("Failed to delete job.");
@@ -926,13 +958,28 @@ export const AdminPage: React.FC = () => {
                               {job.type}
                             </span>
                           </div>
+                          {job.applicationUrl && (
+                            <p className="text-xs text-cenit-blue mt-2 truncate">
+                              📋 {job.applicationUrl}
+                            </p>
+                          )}
                         </div>
-                        <button
-                          onClick={() => handleDeleteJob(job.id)}
-                          className="p-2 text-neutral-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditJob(job)}
+                            className="p-2 text-neutral-400 hover:text-cenit-blue transition-colors"
+                            title="Edit job"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteJob(job.id)}
+                            className="p-2 text-neutral-400 hover:text-red-500 transition-colors"
+                            title="Delete job"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -940,13 +987,13 @@ export const AdminPage: React.FC = () => {
               )}
             </div>
 
-            {/* Add Job Form */}
+            {/* Add/Edit Job Form */}
             <div className="lg:col-span-1">
-              {isAddingNewJob && (
+              {(isAddingNewJob || jobFormData.id) && (
                 <div className="bg-white rounded-xl border border-neutral-200 p-6 sticky top-24">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-neutral-900">
-                      Add New Job
+                      {isAddingNewJob ? "Add New Job" : "Edit Job"}
                     </h3>
                     <button
                       onClick={handleCancelJob}
@@ -1106,14 +1153,18 @@ export const AdminPage: React.FC = () => {
                         ) : (
                           <Save size={16} />
                         )}
-                        {savingJob ? "Saving..." : "Create Job Posting"}
+                        {savingJob
+                          ? "Saving..."
+                          : isAddingNewJob
+                          ? "Create Job Posting"
+                          : "Update Job Posting"}
                       </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {!isAddingNewJob && (
+              {!isAddingNewJob && !jobFormData.id && (
                 <div className="bg-neutral-100 rounded-xl border-2 border-dashed border-neutral-300 p-8 text-center">
                   <Briefcase
                     size={48}

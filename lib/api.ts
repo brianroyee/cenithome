@@ -148,6 +148,24 @@ export async function createJob(
   }
 }
 
+export async function updateJob(
+  id: string,
+  job: Omit<Job, "id">
+): Promise<Job | null> {
+  try {
+    const response = await fetch(`${API_URL}/api/jobs?id=${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(job),
+    });
+    if (!response.ok) throw new Error("Failed to update job");
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating job:", error);
+    return null;
+  }
+}
+
 export async function deleteJob(id: string): Promise<boolean> {
   try {
     const response = await fetch(`${API_URL}/api/jobs?id=${id}`, {
