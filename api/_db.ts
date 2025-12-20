@@ -1,14 +1,23 @@
-import { createClient } from "@libsql/client";
+import { createClient, Client } from "@libsql/client";
 
-// Create Turso client
-const turso = createClient({
-  url: process.env.TURSO_DATABASE_URL || "file:local.db",
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+// Create Turso client (lazy initialization for serverless)
+let turso: Client | null = null;
+
+function getClient(): Client {
+  if (!turso) {
+    turso = createClient({
+      url: process.env.TURSO_DATABASE_URL || "file:local.db",
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+  }
+  return turso;
+}
 
 // Initialize database tables
 export async function initDatabase() {
-  await turso.execute(`
+  const client = getClient();
+
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS team_members (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -20,7 +29,7 @@ export async function initDatabase() {
     )
   `);
 
-  await turso.execute(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS jobs (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -34,12 +43,14 @@ export async function initDatabase() {
 
 // Team Members
 export async function getAllTeamMembers() {
-  const result = await turso.execute("SELECT * FROM team_members");
+  const client = getClient();
+  const result = await client.execute("SELECT * FROM team_members");
   return result.rows;
 }
 
 export async function getTeamMemberById(id: string) {
-  const result = await turso.execute({
+  const client = getClient();
+  const result = await client.execute({
     sql: "SELECT * FROM team_members WHERE id = ?",
     args: [id],
   });
@@ -55,7 +66,8 @@ export async function createTeamMember(member: {
   linkedin?: string;
   group: string;
 }) {
-  await turso.execute({
+  const client = getClient();
+  await client.execute({
     sql: `INSERT INTO team_members (id, name, role, bio, imageUrl, linkedin, "group") VALUES (?, ?, ?, ?, ?, ?, ?)`,
     args: [
       member.id,
@@ -81,7 +93,8 @@ export async function updateTeamMember(
     group: string;
   }>
 ) {
-  await turso.execute({
+  const client = getClient();
+  await client.execute({
     sql: `UPDATE team_members SET name = ?, role = ?, bio = ?, imageUrl = ?, linkedin = ?, "group" = ? WHERE id = ?`,
     args: [
       member.name,
@@ -97,7 +110,8 @@ export async function updateTeamMember(
 }
 
 export async function deleteTeamMember(id: string) {
-  await turso.execute({
+  const client = getClient();
+  await client.execute({
     sql: "DELETE FROM team_members WHERE id = ?",
     args: [id],
   });
@@ -105,7 +119,8 @@ export async function deleteTeamMember(id: string) {
 
 // Jobs
 export async function getAllJobs() {
-  const result = await turso.execute("SELECT * FROM jobs");
+  const client = getClient();
+  const result = await client.execute("SELECT * FROM jobs");
   return result.rows;
 }
 
@@ -117,7 +132,8 @@ export async function createJob(job: {
   type: string;
   description?: string;
 }) {
-  await turso.execute({
+  const client = getClient();
+  await client.execute({
     sql: "INSERT INTO jobs (id, title, department, location, type, description) VALUES (?, ?, ?, ?, ?, ?)",
     args: [
       job.id,
@@ -132,7 +148,8 @@ export async function createJob(job: {
 }
 
 export async function deleteJob(id: string) {
-  await turso.execute({
+  const client = getClient();
+  await client.execute({
     sql: "DELETE FROM jobs WHERE id = ?",
     args: [id],
   });

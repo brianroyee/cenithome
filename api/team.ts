@@ -21,12 +21,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Log environment check
+    console.log("TURSO_DATABASE_URL set:", !!process.env.TURSO_DATABASE_URL);
+
     // Initialize database
     await initDatabase();
 
     // GET - Fetch all team members
     if (req.method === "GET") {
       const members = await getAllTeamMembers();
+      console.log("Fetched members count:", members.length);
       return res.status(200).json(members);
     }
 
@@ -76,6 +80,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
     console.error("Team API error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({
+      error: "Internal server error",
+      message: error instanceof Error ? error.message : "Unknown error",
+      tursoConfigured: !!process.env.TURSO_DATABASE_URL,
+    });
   }
 }
