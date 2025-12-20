@@ -52,6 +52,7 @@ interface JobForm {
   location: string;
   type: string;
   description: string;
+  applicationUrl: string;
 }
 
 const initialTeamFormState: TeamMemberForm = {
@@ -71,6 +72,7 @@ const initialJobFormState: JobForm = {
   location: "",
   type: "Full-time",
   description: "",
+  applicationUrl: "",
 };
 
 // Admin password from environment variable
@@ -278,6 +280,24 @@ export const AdminPage: React.FC = () => {
   };
 
   const handleSaveJob = async () => {
+    // Validate required fields
+    if (!jobFormData.title.trim()) {
+      setError("Job title is required");
+      return;
+    }
+    if (!jobFormData.department.trim()) {
+      setError("Department is required");
+      return;
+    }
+    if (!jobFormData.location.trim()) {
+      setError("Location is required");
+      return;
+    }
+    if (!jobFormData.applicationUrl.trim()) {
+      setError("Application URL is required (e.g., Google Form link)");
+      return;
+    }
+
     setSavingJob(true);
     setError(null);
     try {
@@ -288,6 +308,7 @@ export const AdminPage: React.FC = () => {
         location: jobFormData.location,
         type: jobFormData.type,
         description: jobFormData.description,
+        applicationUrl: jobFormData.applicationUrl,
       });
       if (result) {
         setJobs([...jobs, result]);
@@ -1024,7 +1045,7 @@ export const AdminPage: React.FC = () => {
                     {/* Description */}
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Description *
+                        Description
                       </label>
                       <textarea
                         value={jobFormData.description}
@@ -1037,8 +1058,34 @@ export const AdminPage: React.FC = () => {
                         className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-cenit-blue resize-none"
                         rows={4}
                         placeholder="Brief description of the role and responsibilities..."
+                      />
+                    </div>
+
+                    {/* Application URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        <span className="text-red-500">*</span> Application URL{" "}
+                        <span className="text-neutral-400 font-normal">
+                          (Google Form, Typeform, etc.)
+                        </span>
+                      </label>
+                      <input
+                        type="url"
+                        value={jobFormData.applicationUrl}
+                        onChange={(e) =>
+                          setJobFormData({
+                            ...jobFormData,
+                            applicationUrl: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-cenit-blue"
+                        placeholder="https://forms.google.com/..."
                         required
                       />
+                      <p className="text-xs text-neutral-400 mt-1">
+                        The "Apply Now" button will redirect candidates to this
+                        link
+                      </p>
                     </div>
 
                     {/* Actions */}
@@ -1050,7 +1097,7 @@ export const AdminPage: React.FC = () => {
                           !jobFormData.title ||
                           !jobFormData.department ||
                           !jobFormData.location ||
-                          !jobFormData.description
+                          !jobFormData.applicationUrl
                         }
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-cenit-blue text-white rounded-lg hover:bg-cenit-dark transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >

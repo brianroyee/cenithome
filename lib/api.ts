@@ -21,6 +21,7 @@ export interface Job {
   location: string;
   type: string;
   description: string;
+  applicationUrl?: string;
 }
 
 // File Upload API

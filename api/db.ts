@@ -43,9 +43,17 @@ export async function initDatabase() {
       department TEXT NOT NULL,
       location TEXT NOT NULL,
       type TEXT NOT NULL,
-      description TEXT
+      description TEXT,
+      applicationUrl TEXT
     )
   `);
+
+  // Add applicationUrl column if it doesn't exist (for existing databases)
+  try {
+    await client.execute(`ALTER TABLE jobs ADD COLUMN applicationUrl TEXT`);
+  } catch {
+    // Column already exists, ignore
+  }
 }
 // Helper to transform row from snake_case to camelCase
 function transformTeamMember(row: Record<string, unknown>) {
@@ -140,10 +148,23 @@ export async function deleteTeamMember(id: string) {
 }
 
 // Jobs
+// Helper to transform job row
+function transformJob(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    title: row.title,
+    department: row.department,
+    location: row.location,
+    type: row.type,
+    description: row.description,
+    applicationUrl: row.applicationUrl || row.application_url,
+  };
+}
+
 export async function getAllJobs() {
   const client = getClient();
   const result = await client.execute("SELECT * FROM jobs");
-  return result.rows;
+  return result.rows.map((row) => transformJob(row as Record<string, unknown>));
 }
 
 export async function createJob(job: {
@@ -153,10 +174,11 @@ export async function createJob(job: {
   location: string;
   type: string;
   description?: string;
+  applicationUrl?: string;
 }) {
   const client = getClient();
   await client.execute({
-    sql: "INSERT INTO jobs (id, title, department, location, type, description) VALUES (?, ?, ?, ?, ?, ?)",
+    sql: "INSERT INTO jobs (id, title, department, location, type, description, applicationUrl) VALUES (?, ?, ?, ?, ?, ?, ?)",
     args: [
       job.id,
       job.title,
@@ -164,6 +186,7 @@ export async function createJob(job: {
       job.location,
       job.type,
       job.description || null,
+      job.applicationUrl || null,
     ],
   });
   return job;

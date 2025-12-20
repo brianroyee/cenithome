@@ -31,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         location: body.location,
         type: body.type,
         description: body.description,
+        applicationUrl: body.applicationUrl,
       });
       return res.status(201).json(job);
     }

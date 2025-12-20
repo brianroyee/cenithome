@@ -153,13 +153,25 @@ export const CareersPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex-shrink-0">
-                      <button className="flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white rounded-full group-hover:bg-cenit-blue transition-colors">
+                      <a
+                        href={job.applicationUrl || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-2 px-6 py-3 rounded-full transition-colors ${
+                          job.applicationUrl
+                            ? "bg-neutral-900 text-white group-hover:bg-cenit-blue"
+                            : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
+                        }`}
+                        onClick={(e) => {
+                          if (!job.applicationUrl) e.preventDefault();
+                        }}
+                      >
                         <span className="text-sm font-medium">Apply Now</span>
                         <ArrowRight
                           size={16}
                           className="group-hover:translate-x-1 transition-transform"
                         />
-                      </button>
+                      </a>
                     </div>
                   </div>
                 </div>
