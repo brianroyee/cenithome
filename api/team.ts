@@ -3,6 +3,7 @@ import {
   getAllTeamMembers,
   createTeamMember,
   updateTeamMember,
+  updateTeamMemberOrder,
   deleteTeamMember,
   initDatabase,
 } from "./db.js";
@@ -49,13 +50,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json(member);
     }
 
-    // PUT - Update team member
+    // PUT - Update team member or reorder
     if (req.method === "PUT") {
+      const body = req.body;
+
+      // Check if this is a reorder request (array of updates)
+      if (Array.isArray(body)) {
+        await updateTeamMemberOrder(body);
+        return res.status(200).json({ success: true });
+      }
+
       const { id } = req.query;
       if (!id || typeof id !== "string") {
         return res.status(400).json({ error: "ID required" });
       }
-      const body = req.body;
+
       const member = await updateTeamMember(id, {
         name: body.name,
         role: body.role,

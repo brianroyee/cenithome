@@ -21,11 +21,13 @@ import {
   LogOut,
   Eye,
   EyeOff,
+  GripVertical,
 } from "lucide-react";
 import {
   fetchTeamMembers,
   createTeamMember,
   updateTeamMember,
+  reorderTeamMembers,
   deleteTeamMember,
   fetchJobs,
   createJob,
@@ -35,6 +37,100 @@ import {
   TeamMember,
   Job,
 } from "../lib/api";
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Sortable Item Component
+function SortableTeamMember({
+  member,
+  selected,
+  onEdit,
+  onDelete,
+}: {
+  member: TeamMember;
+  selected: boolean;
+  onEdit: (m: TeamMember) => void;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: member.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-white rounded-lg p-4 border transition-all flex items-center gap-4 ${
+        selected
+          ? "border-cenit-blue shadow-md"
+          : "border-neutral-200 hover:border-neutral-300"
+      }`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab text-neutral-300 hover:text-neutral-500"
+      >
+        <GripVertical size={20} />
+      </div>
+      <img
+        src={member.imageUrl}
+        alt={member.name}
+        className="w-12 h-12 rounded-full object-cover bg-neutral-200"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src =
+            "https://via.placeholder.com/48?text=?";
+        }}
+      />
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-neutral-900 truncate">{member.name}</h4>
+        <p className="text-sm text-neutral-500 truncate">{member.role}</p>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onEdit(member)}
+          className="p-2 text-neutral-400 hover:text-cenit-blue transition-colors"
+        >
+          <Edit2 size={16} />
+        </button>
+        <button
+          onClick={() => onDelete(member.id)}
+          className="p-2 text-neutral-400 hover:text-red-500 transition-colors"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 interface TeamMemberForm {
   id: string;
@@ -111,6 +207,35 @@ export const AdminPage: React.FC = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const jobFormRef = useRef<HTMLDivElement>(null);
+
+  // DnD Sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setMembers((items) => {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+
+      const newItems = arrayMove(items, oldIndex, newIndex);
+
+      // Persist new order
+      const updates = newItems.map((item, index) => ({
+        id: item.id,
+        displayOrder: index,
+      }));
+      reorderTeamMembers(updates).catch(console.error);
+
+      return newItems;
+    });
+  };
 
   // Handle login
   const handleLogin = (e: React.FormEvent) => {
@@ -603,61 +728,39 @@ export const AdminPage: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                (
-                  Object.entries(groupedMembers) as [string, TeamMember[]][]
-                ).map(([group, groupMembers]) => (
-                  <div key={group}>
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">
-                      {group}
-                    </h3>
-                    <div className="space-y-3">
-                      {groupMembers.map((member) => (
-                        <div
-                          key={member.id}
-                          className={`bg-white rounded-lg p-4 border transition-all ${
-                            teamFormData.id === member.id
-                              ? "border-cenit-blue shadow-md"
-                              : "border-neutral-200 hover:border-neutral-300"
-                          }`}
+                <div className="space-y-8">
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    {(
+                      Object.entries(groupedMembers) as [string, TeamMember[]][]
+                    ).map(([group, groupMembers]) => (
+                      <div key={group}>
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">
+                          {group}
+                        </h3>
+                        <SortableContext
+                          items={groupMembers.map((m) => m.id)}
+                          strategy={verticalListSortingStrategy}
                         >
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={member.imageUrl}
-                              alt={member.name}
-                              className="w-12 h-12 rounded-full object-cover bg-neutral-200"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  "https://via.placeholder.com/48?text=?";
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-neutral-900 truncate">
-                                {member.name}
-                              </h4>
-                              <p className="text-sm text-neutral-500 truncate">
-                                {member.role}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEditMember(member)}
-                                className="p-2 text-neutral-400 hover:text-cenit-blue transition-colors"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteMember(member.id)}
-                                className="p-2 text-neutral-400 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                          <div className="space-y-3">
+                            {groupMembers.map((member) => (
+                              <SortableTeamMember
+                                key={member.id}
+                                member={member}
+                                selected={teamFormData.id === member.id}
+                                onEdit={handleEditMember}
+                                onDelete={handleDeleteMember}
+                              />
+                            ))}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
+                        </SortableContext>
+                      </div>
+                    ))}
+                  </DndContext>
+                </div>
               )}
             </div>
 

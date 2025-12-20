@@ -54,6 +54,16 @@ export async function initDatabase() {
   } catch {
     // Column already exists, ignore
   }
+
+  // Add display_order column to team_members if it doesn't exist
+  try {
+    // Try adding snake_case column first
+    await client.execute(
+      `ALTER TABLE team_members ADD COLUMN display_order INTEGER DEFAULT 0`
+    );
+  } catch {
+    // Column might already exist
+  }
 }
 // Helper to transform row from snake_case to camelCase
 function transformTeamMember(row: Record<string, unknown>) {
@@ -65,13 +75,17 @@ function transformTeamMember(row: Record<string, unknown>) {
     imageUrl: row.imageUrl || row.image_url, // Handle both formats
     linkedin: row.linkedin,
     group: row.group || row.group_name || row['"group"'], // Handle different column names
+    displayOrder: (row.displayOrder || row.display_order || 0) as number,
   };
 }
 
 // Team Members
 export async function getAllTeamMembers() {
   const client = getClient();
-  const result = await client.execute("SELECT * FROM team_members");
+  // Sort by display_order ASC (nulls last or treated as 0 via DEFAULT)
+  const result = await client.execute(
+    "SELECT * FROM team_members ORDER BY display_order ASC"
+  );
   return result.rows.map((row) =>
     transformTeamMember(row as Record<string, unknown>)
   );
@@ -99,7 +113,7 @@ export async function createTeamMember(member: {
   const client = getClient();
   try {
     await client.execute({
-      sql: `INSERT INTO team_members (id, name, role, bio, image_url, linkedin, group_name) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO team_members (id, name, role, bio, image_url, linkedin, group_name, display_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         member.id,
         member.name,
@@ -108,6 +122,7 @@ export async function createTeamMember(member: {
         member.imageUrl || null,
         member.linkedin || null,
         member.group,
+        9999, // Default to end of list
       ],
     });
   } catch (e: any) {
@@ -130,6 +145,26 @@ export async function createTeamMember(member: {
     }
   }
   return member;
+}
+
+export async function updateTeamMemberOrder(
+  updates: { id: string; displayOrder: number }[]
+) {
+  const client = getClient();
+  // Execute updates in a transaction or individually
+  const transaction = await client.transaction("write");
+  try {
+    for (const update of updates) {
+      await transaction.execute({
+        sql: "UPDATE team_members SET display_order = ? WHERE id = ?",
+        args: [update.displayOrder, update.id],
+      });
+    }
+    await transaction.commit();
+  } catch (e) {
+    transaction.close();
+    throw e;
+  }
 }
 
 export async function updateTeamMember(

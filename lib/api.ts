@@ -12,6 +12,7 @@ export interface TeamMember {
   imageUrl: string;
   linkedin?: string;
   group: string;
+  displayOrder?: number;
 }
 
 export interface Job {
@@ -97,12 +98,28 @@ export async function updateTeamMember(
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(member),
-    });
     if (!response.ok) throw new Error("Failed to update team member");
     return await response.json();
   } catch (error) {
     console.error("Error updating team member:", error);
     return null;
+  }
+}
+
+export async function reorderTeamMembers(
+  updates: { id: string; displayOrder: number }[]
+): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/api/team`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) throw new Error("Failed to reorder team members");
+    return true;
+  } catch (error) {
+    console.error("Error reordering team members:", error);
+    return false;
   }
 }
 
