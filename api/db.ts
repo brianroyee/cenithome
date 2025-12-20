@@ -97,18 +97,38 @@ export async function createTeamMember(member: {
   group: string;
 }) {
   const client = getClient();
-  await client.execute({
-    sql: `INSERT INTO team_members (id, name, role, bio, imageUrl, linkedin, "group") VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [
-      member.id,
-      member.name,
-      member.role,
-      member.bio || null,
-      member.imageUrl || null,
-      member.linkedin || null,
-      member.group,
-    ],
-  });
+  try {
+    await client.execute({
+      sql: `INSERT INTO team_members (id, name, role, bio, image_url, linkedin, group_name) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        member.id,
+        member.name,
+        member.role,
+        member.bio || null,
+        member.imageUrl || null,
+        member.linkedin || null,
+        member.group,
+      ],
+    });
+  } catch (e: any) {
+    // Fallback for different schema versions
+    if (e.message?.includes("no column")) {
+      await client.execute({
+        sql: `INSERT INTO team_members (id, name, role, bio, imageUrl, linkedin, "group") VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          member.id,
+          member.name,
+          member.role,
+          member.bio || null,
+          member.imageUrl || null,
+          member.linkedin || null,
+          member.group,
+        ],
+      });
+    } else {
+      throw e;
+    }
+  }
   return member;
 }
 
@@ -132,10 +152,23 @@ export async function updateTeamMember(
   const linkedin = member.linkedin ?? null;
   const group = member.group ?? null;
 
-  await client.execute({
-    sql: `UPDATE team_members SET name = ?, role = ?, bio = ?, imageUrl = ?, linkedin = ?, "group" = ? WHERE id = ?`,
-    args: [name, role, bio, imageUrl, linkedin, group, id],
-  });
+  try {
+    // Try snake_case first (Production DB seems to use this)
+    await client.execute({
+      sql: `UPDATE team_members SET name = ?, role = ?, bio = ?, image_url = ?, linkedin = ?, group_name = ? WHERE id = ?`,
+      args: [name, role, bio, imageUrl, linkedin, group, id],
+    });
+  } catch (e: any) {
+    if (e.message?.includes("no column")) {
+      // Fallback to original schema
+      await client.execute({
+        sql: `UPDATE team_members SET name = ?, role = ?, bio = ?, imageUrl = ?, linkedin = ?, "group" = ? WHERE id = ?`,
+        args: [name, role, bio, imageUrl, linkedin, group, id],
+      });
+    } else {
+      throw e;
+    }
+  }
   return { id, ...member };
 }
 
