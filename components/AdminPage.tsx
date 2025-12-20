@@ -283,11 +283,11 @@ export const AdminPage: React.FC = () => {
 
     setUploadingImage(false);
   };
-  const loadMembers = async () => {
+  const loadMembers = async (force = false) => {
     setLoadingTeam(true);
     setError(null);
     try {
-      const data = await fetchTeamMembers();
+      const data = await fetchTeamMembers(force);
       setMembers(data);
     } catch (err) {
       setError(
@@ -298,11 +298,11 @@ export const AdminPage: React.FC = () => {
   };
 
   // Load jobs
-  const loadJobs = async () => {
+  const loadJobs = async (force = false) => {
     setLoadingJobs(true);
     setError(null);
     try {
-      const data = await fetchJobs();
+      const data = await fetchJobs(force);
       setJobs(data);
     } catch (err) {
       setError("Failed to load jobs. Make sure the API server is running.");
@@ -695,7 +695,7 @@ export const AdminPage: React.FC = () => {
                 </h2>
                 <div className="flex gap-2">
                   <button
-                    onClick={loadMembers}
+                    onClick={() => loadMembers(true)}
                     disabled={loadingTeam}
                     className="flex items-center gap-2 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors disabled:opacity-50"
                   >
@@ -1013,7 +1013,7 @@ export const AdminPage: React.FC = () => {
                 </h2>
                 <div className="flex gap-2">
                   <button
-                    onClick={loadJobs}
+                    onClick={() => loadJobs(true)}
                     disabled={loadingJobs}
                     className="flex items-center gap-2 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors disabled:opacity-50"
                   >

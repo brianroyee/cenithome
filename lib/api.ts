@@ -4,6 +4,12 @@
 // In local development, API is at localhost:3001/api/*
 const API_URL = import.meta.env.VITE_API_URL || "";
 
+// Simple in-memory cache
+const cache: {
+  teamMembers?: TeamMember[];
+  jobs?: Job[];
+} = {};
+
 export interface TeamMember {
   id: string;
   name: string;
@@ -61,11 +67,19 @@ export async function uploadImage(
 }
 
 // Team Members API
-export async function fetchTeamMembers(): Promise<TeamMember[]> {
+export async function fetchTeamMembers(
+  forceRefresh = false
+): Promise<TeamMember[]> {
+  if (!forceRefresh && cache.teamMembers) {
+    return cache.teamMembers;
+  }
+
   try {
     const response = await fetch(`${API_URL}/api/team`);
     if (!response.ok) throw new Error("Failed to fetch team members");
-    return await response.json();
+    const data = await response.json();
+    cache.teamMembers = data; // Update cache
+    return data;
   } catch (error) {
     console.error("Error fetching team members:", error);
     return [];
@@ -82,6 +96,7 @@ export async function createTeamMember(
       body: JSON.stringify(member),
     });
     if (!response.ok) throw new Error("Failed to create team member");
+    cache.teamMembers = undefined; // Invalidate cache
     return await response.json();
   } catch (error) {
     console.error("Error creating team member:", error);
@@ -100,6 +115,7 @@ export async function updateTeamMember(
       body: JSON.stringify(member),
     });
     if (!response.ok) throw new Error("Failed to update team member");
+    cache.teamMembers = undefined; // Invalidate cache
     return await response.json();
   } catch (error) {
     console.error("Error updating team member:", error);
@@ -117,6 +133,11 @@ export async function reorderTeamMembers(
       body: JSON.stringify(updates),
     });
     if (!response.ok) throw new Error("Failed to reorder team members");
+
+    // Update cache optimistically or invalidate
+    // Invalidating is safer to ensure consistency with DB
+    cache.teamMembers = undefined;
+
     return true;
   } catch (error) {
     console.error("Error reordering team members:", error);
@@ -130,6 +151,7 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete team member");
+    cache.teamMembers = undefined; // Invalidate cache
     return true;
   } catch (error) {
     console.error("Error deleting team member:", error);
@@ -138,11 +160,17 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
 }
 
 // Jobs API
-export async function fetchJobs(): Promise<Job[]> {
+export async function fetchJobs(forceRefresh = false): Promise<Job[]> {
+  if (!forceRefresh && cache.jobs) {
+    return cache.jobs;
+  }
+
   try {
     const response = await fetch(`${API_URL}/api/jobs`);
     if (!response.ok) throw new Error("Failed to fetch jobs");
-    return await response.json();
+    const data = await response.json();
+    cache.jobs = data; // Update cache
+    return data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
     return [];
@@ -159,6 +187,7 @@ export async function createJob(
       body: JSON.stringify(job),
     });
     if (!response.ok) throw new Error("Failed to create job");
+    cache.jobs = undefined; // Invalidate cache
     return await response.json();
   } catch (error) {
     console.error("Error creating job:", error);
@@ -177,6 +206,7 @@ export async function updateJob(
       body: JSON.stringify(job),
     });
     if (!response.ok) throw new Error("Failed to update job");
+    cache.jobs = undefined; // Invalidate cache
     return await response.json();
   } catch (error) {
     console.error("Error updating job:", error);
@@ -190,6 +220,7 @@ export async function deleteJob(id: string): Promise<boolean> {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete job");
+    cache.jobs = undefined; // Invalidate cache
     return true;
   } catch (error) {
     console.error("Error deleting job:", error);
