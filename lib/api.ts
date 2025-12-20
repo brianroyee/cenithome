@@ -98,6 +98,7 @@ export async function updateTeamMember(
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(member),
+    });
     if (!response.ok) throw new Error("Failed to update team member");
     return await response.json();
   } catch (error) {
