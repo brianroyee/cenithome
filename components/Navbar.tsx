@@ -54,10 +54,10 @@ export const Navbar: React.FC = () => {
   // Logic to determine navbar appearance based on route
   const isTeamView = location.pathname === "/team";
   const navClasses = scrolled
-    ? "bg-white/80 backdrop-blur-md py-4 border-b border-neutral-200"
+    ? "bg-white/80 backdrop-blur-md py-3 md:py-4 border-b border-neutral-200"
     : isTeamView
-    ? "bg-transparent py-6 text-white"
-    : "bg-transparent py-6";
+    ? "bg-transparent py-4 md:py-6 text-white"
+    : "bg-transparent py-4 md:py-6";
 
   const logoClasses =
     isTeamView && !scrolled ? "text-white" : "text-cenit-blue";

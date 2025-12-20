@@ -85,38 +85,39 @@ export const TeamPage: React.FC = () => {
                   <img
                     src={member.imageUrl}
                     alt={member.name}
-                    className="w-full h-full object-cover opacity-60 scale-105"
+                    className="w-full h-full object-cover opacity-80 md:opacity-60"
                     style={{
                       transition: "transform 10s ease-out",
-                      transform: "scale(1.1)",
+                      transform: "scale(1.05)",
                     }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         "https://via.placeholder.com/800x600?text=No+Image";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent" />
+                  {/* Stronger gradient on mobile for better text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-neutral-950/20 md:via-neutral-950/30 md:to-transparent" />
                 </div>
 
                 {/* Content */}
-                <div className="absolute bottom-0 left-0 w-full p-8 pb-24 md:pb-12 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="inline-block px-3 py-1 border border-white/20 rounded-full text-[10px] uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
+                <div className="absolute bottom-0 left-0 w-full p-6 pb-20 md:p-8 md:pb-12 space-y-3 md:space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="inline-block px-2 py-0.5 md:px-3 md:py-1 border border-white/30 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-white/90 backdrop-blur-md bg-white/10">
                       0{index + 1}
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-cenit-blue font-bold">
+                    <span className="text-[10px] md:text-xs uppercase tracking-widest text-white font-bold bg-cenit-blue/90 px-2 py-0.5 rounded">
                       {member.group}
                     </span>
                   </div>
 
-                  <h2 className="text-4xl md:text-6xl font-bold text-white">
+                  <h2 className="text-3xl md:text-6xl font-bold text-white drop-shadow-lg">
                     {member.name}
                   </h2>
-                  <p className="text-cenit-light text-xl font-medium">
+                  <p className="text-white/90 text-lg md:text-xl font-semibold">
                     {member.role}
                   </p>
                   {member.bio && (
-                    <p className="text-neutral-300 text-lg md:text-xl max-w-md font-light leading-relaxed">
+                    <p className="text-white/80 text-base md:text-xl max-w-md font-light leading-relaxed">
                       {member.bio}
                     </p>
                   )}
