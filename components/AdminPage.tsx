@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Reveal } from "./ui/Reveal";
 import { Link } from "react-router-dom";
 import {
@@ -109,6 +109,8 @@ export const AdminPage: React.FC = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const jobFormRef = useRef<HTMLDivElement>(null);
 
   // Handle login
   const handleLogin = (e: React.FormEvent) => {
@@ -278,6 +280,13 @@ export const AdminPage: React.FC = () => {
       id: `job-${Date.now()}`,
     });
     setIsAddingNewJob(true);
+    // Scroll to form
+    setTimeout(() => {
+      jobFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
   };
 
   const handleSaveJob = async () => {
@@ -347,6 +356,13 @@ export const AdminPage: React.FC = () => {
       applicationUrl: job.applicationUrl || "",
     });
     setIsAddingNewJob(false); // Not adding new, editing existing
+    // Scroll to form
+    setTimeout(() => {
+      jobFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
   };
 
   const handleDeleteJob = async (id: string) => {
@@ -988,7 +1004,7 @@ export const AdminPage: React.FC = () => {
             </div>
 
             {/* Add/Edit Job Form */}
-            <div className="lg:col-span-1">
+            <div ref={jobFormRef} className="lg:col-span-1">
               {(isAddingNewJob || jobFormData.id) && (
                 <div className="bg-white rounded-xl border border-neutral-200 p-6 sticky top-24">
                   <div className="flex justify-between items-center mb-6">
