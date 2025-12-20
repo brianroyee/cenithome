@@ -1,13 +1,20 @@
-import { createClient, Client } from "@libsql/client";
+import { createClient, Client } from "@libsql/client/web";
 
 // Create Turso client (lazy initialization for serverless)
 let turso: Client | null = null;
 
 function getClient(): Client {
   if (!turso) {
+    const url = process.env.TURSO_DATABASE_URL;
+    const authToken = process.env.TURSO_AUTH_TOKEN;
+
+    if (!url) {
+      throw new Error("TURSO_DATABASE_URL environment variable is not set");
+    }
+
     turso = createClient({
-      url: process.env.TURSO_DATABASE_URL || "file:local.db",
-      authToken: process.env.TURSO_AUTH_TOKEN,
+      url,
+      authToken,
     });
   }
   return turso;
