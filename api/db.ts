@@ -101,17 +101,17 @@ export async function updateTeamMember(
   }>
 ) {
   const client = getClient();
+  // Explicitly convert undefined to null - Turso doesn't accept undefined
+  const name = member.name ?? null;
+  const role = member.role ?? null;
+  const bio = member.bio ?? null;
+  const imageUrl = member.imageUrl ?? null;
+  const linkedin = member.linkedin ?? null;
+  const group = member.group ?? null;
+
   await client.execute({
     sql: `UPDATE team_members SET name = ?, role = ?, bio = ?, imageUrl = ?, linkedin = ?, "group" = ? WHERE id = ?`,
-    args: [
-      member.name,
-      member.role,
-      member.bio || null,
-      member.imageUrl || null,
-      member.linkedin || null,
-      member.group,
-      id,
-    ],
+    args: [name, role, bio, imageUrl, linkedin, group, id],
   });
   return { id, ...member };
 }
