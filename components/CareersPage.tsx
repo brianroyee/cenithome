@@ -193,7 +193,7 @@ export const CareersPage: React.FC = () => {
               us your resume and let's start a conversation.
             </p>
             <a
-              href="mailto:careers@cenitlabs.com"
+              href="mailto:contact@cenitlabs.com"
               className="inline-block px-8 py-4 bg-white text-cenit-blue rounded-full font-bold hover:bg-neutral-100 transition-colors"
             >
               Send Open Application
