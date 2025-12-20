@@ -111,6 +111,7 @@ export const Team: React.FC = () => {
                     <img
                       src={member.imageUrl}
                       alt={member.name}
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 filter grayscale group-hover:grayscale-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =

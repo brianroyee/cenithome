@@ -85,7 +85,8 @@ export const TeamPage: React.FC = () => {
                   <img
                     src={member.imageUrl}
                     alt={member.name}
-                    className="w-full h-full object-cover opacity-80 md:opacity-60"
+                    loading="lazy"
+                    className="w-full h-full object-cover opacity-80 md:opacity-60 will-change-transform"
                     style={{
                       transition: "transform 10s ease-out",
                       transform: "scale(1.05)",
