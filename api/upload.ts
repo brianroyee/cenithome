@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       resource_type: "image",
       public_id: filename || `upload-${Date.now()}`,
       transformation: [
-        { width: 800, height: 1000, crop: "fill", gravity: "face" },
+        { width: 1200, height: 1600, crop: "fill", gravity: "face" },
         { quality: "auto" },
         { fetch_format: "auto" },
       ],

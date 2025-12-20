@@ -14,11 +14,21 @@ export const Cursor: React.FC = () => {
     )
       return;
 
-    const onMouseMove = (e: MouseEvent) => {
+    let requestID: number | undefined;
+    let mouse = { x: 0, y: 0 };
+
+    const updateCursor = () => {
       if (cursorRef.current) {
-        // Position exactly at mouse coordinates
-        cursorRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        cursorRef.current.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0)`;
         if (!isVisible) setIsVisible(true);
+      }
+      requestID = undefined;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      mouse = { x: e.clientX, y: e.clientY };
+      if (!requestID) {
+        requestID = requestAnimationFrame(updateCursor);
       }
     };
 
@@ -44,14 +54,15 @@ export const Cursor: React.FC = () => {
     const onMouseLeave = () => setIsVisible(false);
     const onMouseEnter = () => setIsVisible(true);
 
-    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
     window.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
-    window.addEventListener("mouseover", onMouseOver);
+    window.addEventListener("mouseover", onMouseOver, { passive: true });
     document.documentElement.addEventListener("mouseleave", onMouseLeave);
     document.documentElement.addEventListener("mouseenter", onMouseEnter);
 
     return () => {
+      if (requestID) cancelAnimationFrame(requestID);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
