@@ -47,12 +47,26 @@ export async function initDatabase() {
     )
   `);
 }
+// Helper to transform row from snake_case to camelCase
+function transformTeamMember(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    bio: row.bio,
+    imageUrl: row.imageUrl || row.image_url, // Handle both formats
+    linkedin: row.linkedin,
+    group: row.group || row.group_name || row['"group"'], // Handle different column names
+  };
+}
 
 // Team Members
 export async function getAllTeamMembers() {
   const client = getClient();
   const result = await client.execute("SELECT * FROM team_members");
-  return result.rows;
+  return result.rows.map((row) =>
+    transformTeamMember(row as Record<string, unknown>)
+  );
 }
 
 export async function getTeamMemberById(id: string) {
@@ -61,7 +75,8 @@ export async function getTeamMemberById(id: string) {
     sql: "SELECT * FROM team_members WHERE id = ?",
     args: [id],
   });
-  return result.rows[0] || null;
+  const row = result.rows[0];
+  return row ? transformTeamMember(row as Record<string, unknown>) : null;
 }
 
 export async function createTeamMember(member: {
