@@ -5,7 +5,7 @@ import {
   updateTeamMember,
   deleteTeamMember,
   initDatabase,
-} from "./_db";
+} from "./db.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers

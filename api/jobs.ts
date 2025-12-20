@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getAllJobs, createJob, deleteJob, initDatabase } from "./_db";
+import { getAllJobs, createJob, deleteJob, initDatabase } from "./db.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
